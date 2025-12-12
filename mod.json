@@ -1,0 +1,33 @@
+{
+	"geode": "4.10.0",
+	"gd": {
+		"win": "2.2074",
+		"android": "2.2074",
+		"mac": "2.2074",
+		"ios": "2.2074"
+	},
+	"id": "lr70.die-delete-hazards",
+	"name": "Die & Delete Hazards",
+	"version": "v1.0.0",
+	"developer": "LatterRarity70",
+	"description": "Destroy hazard object caused your death. On respawn, destroyed objects remain gone.",
+	"links": {
+		"community": "https://discord.gg/6SxAbk3bTA",
+		"homepage": "https://t.me/LatterRarity70",
+		"source": "https://github.com/LatterRarity70/Die-Delete-Hazards"
+	},
+	"tags": [ "offline", "gameplay", "cheat" ],
+	"settings": {
+		"Objects to destroy at one attempt": {
+			"name": "Objects to destroy at one attempt",
+			"type": "int",
+			"default": 0,
+			"min": -1
+		},
+		"Show state label": {
+			"name": "Show state label",
+			"type": "bool",
+			"default": true
+		}
+	}
+}
