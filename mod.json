@@ -8,7 +8,7 @@
 	},
 	"id": "lr70.die-delete-hazards",
 	"name": "Die & Delete Hazards",
-	"version": "v1.0.0",
+	"version": "v1.1.0",
 	"developer": "LatterRarity70",
 	"description": "Destroy hazard object caused your death. On respawn, destroyed objects remain gone.",
 	"links": {
@@ -28,6 +28,44 @@
 			"name": "Show state label",
 			"type": "bool",
 			"default": true
+		},
+		"Spawn Particle": {
+			"name": "Spawn Particle",
+			"type": "string",
+			"default": "explodeEffectGrav.plist"
+		},
+		"Destroy SFX": {
+			"name": "Destroy SFX",
+			"type": "int",
+			"default": 2714
+		},
+		"Add Object Explosion": {
+			"name": "Add Object Explosion",
+			"type": "bool",
+			"default": true
+		},
+		"Explosion Sprites Lifetime": {
+			"name": "Explosion Sprites Lifetime",
+			"type": "float",
+			"default": 3.0,
+			"min": 0.1
+		},
+		"Explosion Sprites Count X": {
+			"name": "Explosion Sprites Count X",
+			"type": "int",
+			"default": 3,
+			"min": 1
+		},
+		"Explosion Sprites Count Y": {
+			"name": "Explosion Sprites Count Y",
+			"type": "int",
+			"default": 3,
+			"min": 1
+		},
+		"Explosion Without Particles": {
+			"name": "Explosion Without Particles",
+			"type": "bool",
+			"default": false
 		}
 	}
 }

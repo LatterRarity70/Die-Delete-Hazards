@@ -4,6 +4,13 @@
 using namespace geode::prelude;
 
 #define MAX_TO_DESTROY Mod::get()->getSettingValue<int>("Objects to destroy at one attempt")
+#define ADD_OBJECT_EXPLOSION Mod::get()->getSettingValue<bool>("Add Object Explosion")
+#define EXPLOSION_SPRITES_LIFETIME Mod::get()->getSettingValue<float>("Explosion Sprites Lifetime") //Explosion Sprites Lifetime
+#define EXPLOSION_SPRITES_COUNT_X Mod::get()->getSettingValue<int>("Explosion Sprites Count X") //Explosion Sprites Count X
+#define EXPLOSION_SPRITES_COUNT_Y Mod::get()->getSettingValue<int>("Explosion Sprites Count Y") //Explosion Sprites Count Y
+#define EXPLOSION_WITHOUT_PARTICLES Mod::get()->getSettingValue<bool>("Explosion Without Particles") //Explosion Without Particles
+#define SPAWN_PARTICLE Mod::get()->getSettingValue<std::string>("Spawn Particle") // Spawn Particle
+#define DESTROY_SFX Mod::get()->getSettingValue<int>("Destroy SFX") // Remain Ones Destroy SFX
 
 #include <Geode/modify/GameObject.hpp>
 class $modify(GameObjectExt, GameObject) {
@@ -18,9 +25,11 @@ class $modify(PlayLayerExt, PlayLayer) {
 	struct Fields {
 		CCLabelBMFont* m_remainObjectsStateLabel;
 	};
+
 	int& getRemainObjects() {
 		return m_fields->m_remainObjectsStateLabel->m_nTag;
 	}
+
 	void updateRemainObjectsLabel() {
 		if (!m_fields->m_remainObjectsStateLabel) return;
 		m_fields->m_remainObjectsStateLabel->setString(fmt::format(
@@ -28,6 +37,7 @@ class $modify(PlayLayerExt, PlayLayer) {
 			, MAX_TO_DESTROY
 		).c_str());
 	}
+
 	void setupHasCompleted() {
 		PlayLayer::setupHasCompleted();
 
@@ -53,6 +63,44 @@ class $modify(PlayLayerExt, PlayLayer) {
 		m_fields->m_remainObjectsStateLabel->setTag(MAX_TO_DESTROY);
 		updateRemainObjectsLabel();
 	}
+
+	void createObjectExplosion(PlayerObject* player, GameObject* obj) {
+		if (!obj) return;
+
+		CCSize size = obj->getContentSize();
+		CCRenderTexture* texture = CCRenderTexture::create(size.width, size.height);
+
+		texture->begin();
+
+		CCPoint og = obj->getPosition();
+
+		obj->setFlipX(false);
+		obj->setFlipY(false);
+		obj->setRotation(0);
+		obj->setPosition(
+			-obj->getPosition() + m_objectLayer->convertToNodeSpace({ 0, 0 }) 
+			+ size + m_objectLayer->getPosition()
+		);
+		obj->visit();
+		obj->setPosition(og);
+
+		texture->end();
+
+		ExplodeItemNode* explosion = ExplodeItemNode::create(texture);
+		explosion->setPosition(obj->getPosition());
+		m_objectLayer->addChild(explosion, 101);
+
+		explosion->createSprites(
+			1 + rand() % EXPLOSION_SPRITES_COUNT_X, 
+			1 + rand() % EXPLOSION_SPRITES_COUNT_Y,
+			player->m_playerSpeed + player->getCurrentXVelocity(), 5,
+			player->m_playerSpeed + player->m_yVelocity, 3.f,
+			EXPLOSION_SPRITES_LIFETIME, EXPLOSION_SPRITES_LIFETIME / 2,
+			{ 1.f, 1.f, 1.f, 1.f }, { 1.f, 1.f, 1.f, 1.f }, 
+			EXPLOSION_WITHOUT_PARTICLES
+		);
+	};
+
 	virtual void destroyPlayer(PlayerObject* player, GameObject* object) {
 		if (!m_fields->m_remainObjectsStateLabel) return PlayLayer::destroyPlayer(player, object);
 
@@ -68,28 +116,29 @@ class $modify(PlayLayerExt, PlayLayer) {
 		if (!remain and (MAX_TO_DESTROY != -1)) PlayLayer::destroyPlayer(player, object);
 
 		Ref obj = object;
-		if (obj->m_objectType == GameObjectType::Solid) return;
+
+		if (ADD_OBJECT_EXPLOSION) createObjectExplosion(player, object);
+		this->spawnParticle(
+			SPAWN_PARTICLE.c_str(), obj->m_zOrder, //lol
+			kCCPositionTypeRelative, obj->getRealPosition()
+		);
 
 		auto oldid = obj->m_objectID;
 		obj->m_objectID = 143;
 		obj->customSetup();
 		obj->playDestroyObjectAnim(this);
-		this->spawnParticle(
-			"explodeEffectGrav.plist", obj->m_zOrder, //lol
-			kCCPositionTypeRelative, obj->getRealPosition()
-		);
 		obj->destroyObject();
 		obj->m_objectID = oldid;
 		obj->customSetup();
 
 		obj->setUserObject("destroyed"_spr, CCNode::create());
 
-		if (remain) {
-			FMODAudioEngine::get()->playEffect(
-				MusicDownloadManager::sharedState()->pathForSFX(886)//"sfx/s886.ogg");
-				, 1.0f + 0.5f * ((MAX_TO_DESTROY - remain) / (float)MAX_TO_DESTROY), 1.f, 0.5
-			);
-		}
+		FMODAudioEngine::get()->playEffect(
+			MusicDownloadManager::sharedState()->pathForSFX(DESTROY_SFX)//"sfx/s886.ogg");
+			, MAX_TO_DESTROY == -1 ? 
+			1.0f : (1.0f + 0.5f * ((MAX_TO_DESTROY - remain) / (float)MAX_TO_DESTROY))
+			, 1.f, 0.5
+		);
 
 		if (MAX_TO_DESTROY != -1) {
 			remain--;
